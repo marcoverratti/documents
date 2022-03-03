@@ -23,9 +23,19 @@ Login to postgres:
 $ sudo -u postgres psql
 ```
 
-Create user:
+Show roles:
 ```
-postgres=# alter user <userName> password ‘<password>’
+postgres=# \du
+```
+
+Create role:
+```
+postgres=# CREATE ROLE <username> WITH PASSWORD '<password>'
+```
+
+To change the password of a PostgreSQL user:
+```
+postgres=# ALTER ROLE <userName> WITH PASSWORD ‘<password>’
 ```
 
 Exit with `\q`:
