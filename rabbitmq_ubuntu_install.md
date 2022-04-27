@@ -4,33 +4,33 @@
 Update apt list first:
 
 ```
-$ sudo apt update
+sudo apt update
 ```
 
 Then install ```rabbitmq-server``` package:
 ```
-$ sudo apt install rabbitmq-server
+sudo apt install rabbitmq-server
 ```
 
 After installation, RabbitMQ service is started and enabled to start on boot. To check the status, run:
 ```
-$ systemctl status rabbitmq-server.service
+systemctl status rabbitmq-server.service
 ```
 <img src='https://i.ibb.co/mcFNNgb/Untitled.png'></img>
 
 ## 2. Enable the RabbitMQ Management Dashboard
 ```
-$ sudo rabbitmq-plugins enable rabbitmq_management
+sudo rabbitmq-plugins enable rabbitmq_management
 ```
 The Web service should be listening on TCP port 15672
 ```
-$ sudo ss -tunelp | grep 15672
+sudo ss -tunelp | grep 15672
 ```
 <img src="https://i.ibb.co/zJhw9JQ/Untitled.png"></img>
 ### Create an admin user
 ```
-$ sudo rabbitmqctl add_user <UserName> <StrongPassword>
-$ sudo rabbitmqctl set_user_tags <UserName> administrator
+sudo rabbitmqctl add_user <UserName> <StrongPassword>
+sudo rabbitmqctl set_user_tags <UserName> administrator
 ```
 Login with this admin username and the password assigned.
 
